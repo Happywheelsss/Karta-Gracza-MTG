@@ -2,7 +2,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 # ========== CONFIGURABLE VARIABLES ==========
 CARD_WIDTH = 800  # Width of the player card
-CARD_HEIGHT = 1200  # Height of the player card
+CARD_HEIGHT = 1400  # Height of the player card
 
 TOP_SECTION_HEIGHT = int(CARD_HEIGHT * 0.3)  # Height of the top section (background + player photo)
 BOTTOM_SECTION_HEIGHT = CARD_HEIGHT - TOP_SECTION_HEIGHT  # Height of the decklist section
