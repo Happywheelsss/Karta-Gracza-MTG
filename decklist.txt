@@ -31,3 +31,5 @@ Sideboard:
 1 Faerie Macabre
 2 Wrath of the Skies
 2 Thoughtseize
+
+

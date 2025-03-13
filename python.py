@@ -28,9 +28,9 @@ BOTTOM_BACKGROUND_IMAGE = "bottom_background.jpg"  # Background image for the bo
 
 SPONSOR_LOGO_SIZE = (350, 175)  # Size of the sponsor logo (width, height)
 SPONSOR_LOGO_1_IMAGE = "sponsor_logo1.png"  # Sponsor logo image file
-SPONSOR_LOGO_1_Y = CARD_HEIGHT - 250  # Vertical position of the sponsor logo
-SPONSOR_LOGO_2_IMAGE = "sponsor_logo2.png"  # Sponsor logo image file
-SPONSOR_LOGO_2_Y = CARD_HEIGHT - 450  # Vertical position of the sponsor logo
+SPONSOR_LOGO_1_Y = TOP_SECTION_HEIGHT + 400  # Vertical position of the sponsor logo
+SPONSOR_LOGO_2_IMAGE = "sponsor_logo2.jpg"  # Sponsor logo image file
+SPONSOR_LOGO_2_Y = TOP_SECTION_HEIGHT + 600  # Vertical position of the sponsor logo
 
 
 OUTPUT_FILE = "player_card.jpg"  # Output file name
@@ -120,17 +120,16 @@ def draw_text_with_outline(draw, position, text_lines, font, text_color="white",
         draw.text((x_pos, line_y), line, font=font, fill=text_color)
 
 def create_player_card(player_photo, decklist_file, output_file=OUTPUT_FILE):
-    """Creates a player card using data from decklist.txt."""
+    """Creates a player card using data from decklist.txt with Sideboard-based sponsor logo placement."""
     player_name, deck_archetype, mainboard, sideboard = parse_decklist(decklist_file)
 
     # Load and process images
     bg_top = Image.open(TOP_BACKGROUND_IMAGE).resize((CARD_WIDTH, TOP_SECTION_HEIGHT))
     bg_bottom = Image.open(BOTTOM_BACKGROUND_IMAGE).resize((CARD_WIDTH, BOTTOM_SECTION_HEIGHT))
-    sponsor_logo1 = Image.open(SPONSOR_LOGO_1_IMAGE).resize(SPONSOR_LOGO_SIZE)
-    sponsor_logo2 = Image.open(SPONSOR_LOGO_2_IMAGE).resize(SPONSOR_LOGO_SIZE)
-    sponsor_logo1 = sponsor_logo1.convert("RGBA")
-    sponsor_logo2 = sponsor_logo2.convert("RGBA")
-    
+
+    sponsor_logo1 = Image.open(SPONSOR_LOGO_1_IMAGE).resize(SPONSOR_LOGO_SIZE).convert("RGBA")
+    sponsor_logo2 = Image.open(SPONSOR_LOGO_2_IMAGE).resize(SPONSOR_LOGO_SIZE).convert("RGBA")
+
     player_img = Image.open(player_photo)
     player_img = crop_center(player_img, PLAYER_PHOTO_SIZE)
     player_img = make_circle(player_img)
@@ -158,7 +157,6 @@ def create_player_card(player_photo, decklist_file, output_file=OUTPUT_FILE):
         column_title_font = ImageFont.load_default()
         small_font = ImageFont.load_default()
 
-
     # **Text Positions**
     draw_text_with_outline(draw, (MAINBOARD_X_OFFSET, TEXT_START_Y), ["Mainboard"], column_title_font, align="center")
     draw_text_with_outline(draw, (SIDEBOARD_X_OFFSET, TEXT_START_Y), ["Sideboard"], column_title_font, align="center")
@@ -171,20 +169,26 @@ def create_player_card(player_photo, decklist_file, output_file=OUTPUT_FILE):
     for i, card_name in enumerate(sideboard):
         draw_text_with_outline(draw, (SIDEBOARD_X_OFFSET, TEXT_START_Y + 60 + i * card_spacing), [card_name], small_font, align="center")
 
-    # **Paste Sponsor Logo**
-    sponsor_1 = SIDEBOARD_X_OFFSET - SPONSOR_LOGO_SIZE[0] // 2 + 120
-    card.paste(sponsor_logo1, (sponsor_1, SPONSOR_LOGO_1_Y), sponsor_logo1)
+    # **Determine Sideboard height only**
+    sideboard_height = len(sideboard) * card_spacing
+    sponsor_start_y = TEXT_START_Y + 60 + sideboard_height # Place first logo strictly below Sideboard
 
-        # **Paste Sponsor Logo**
-    sponsor_2 = SIDEBOARD_X_OFFSET - SPONSOR_LOGO_SIZE[0] // 2 + 120
-    card.paste(sponsor_logo2, (sponsor_2, SPONSOR_LOGO_2_Y), sponsor_logo2)
+    # **Ensure sponsor logos stay within bounds**
+    min_sponsor_y = TEXT_START_Y + 400  # Default Y position if Sideboard is small
+    max_sponsor_y = CARD_HEIGHT - SPONSOR_LOGO_SIZE[1] - 50  # Prevent logos from going off the bottom
 
-        # **Text Positions**
+    sponsor_logo1_y = max(min_sponsor_y, min(sponsor_start_y, max_sponsor_y - SPONSOR_LOGO_SIZE[1] - 120))
+    sponsor_logo2_y = min(sponsor_logo1_y + SPONSOR_LOGO_SIZE[1] + 25, max_sponsor_y)
+
+    # **Paste Sponsor Logos at Adjusted Positions**
+    card.paste(sponsor_logo1, (SIDEBOARD_X_OFFSET, sponsor_logo1_y), sponsor_logo1)
+    card.paste(sponsor_logo2, (SIDEBOARD_X_OFFSET, sponsor_logo2_y), sponsor_logo2)
+
+    # **Draw player name & deck archetype**
     text_y = player_y + player_img.size[1] // 2 - 80
     name_x = player_x - 40
     deck_x = player_x + player_img.size[0] + 40
 
-    # **Draw player name & deck archetype**
     draw_text_with_outline(draw, (name_x, text_y), player_name.split(" "), name_font, align="right")
     draw_text_with_outline(draw, (deck_x, text_y), deck_archetype.split(" "), name_font, align="left")
 
