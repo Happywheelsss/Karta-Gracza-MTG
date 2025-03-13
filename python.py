@@ -11,7 +11,7 @@ PLAYER_PHOTO_SIZE = 275  # Size of the player's circular photo
 OUTLINE_WIDTH = 5  # Thickness of the circular photo outline
 
 TEXT_OUTLINE_WIDTH = 2  # Thickness of the text outline for better visibility
-FONT_PATH = "arial.ttf"  # Path to the font file
+FONT_PATH = "verdana.ttf"  # Path to the font file
 
 COLUMN_FONT_SIZE = 30  # Font size for Mainboard & Sideboard cards
 PLAYER_NAME_FONT_SIZE = 74  # Font size for player name and deck archetype
@@ -69,38 +69,34 @@ def make_circle(image):
     return circular_img
 
 def parse_decklist(file_path):
-    """Parses decklist.txt into mainboard and sideboard lists."""
+    """Parses decklist.txt into player name, deck archetype, mainboard, and sideboard lists."""
     mainboard = []
     sideboard = []
     section = None
 
     with open(file_path, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
+        lines = [line.strip() for line in f if line.strip()]
+        
+    if len(lines) < 2:
+        raise ValueError("Decklist must have at least 2 lines: player name and deck archetype.")
 
-            if line.lower().startswith("mainboard:"):
-                section = "mainboard"
-                continue
-            elif line.lower().startswith("sideboard:"):
-                section = "sideboard"
-                continue
+    player_name = lines[0]
+    deck_archetype = lines[1]
 
-            if section:
-                parts = line.split(" ", 1)
-                if len(parts) == 2:
-                    qty, name = parts
-                    formatted_line = f"{qty}x {name}"
-                else:
-                    formatted_line = parts[0]
+    for line in lines[2:]:  
+        if line.lower().startswith("mainboard:"):
+            section = "mainboard"
+            continue
+        elif line.lower().startswith("sideboard:"):
+            section = "sideboard"
+            continue
 
-                if section == "mainboard":
-                    mainboard.append(formatted_line)
-                elif section == "sideboard":
-                    sideboard.append(formatted_line)
+        if section:
+            parts = line.split(" ", 1)
+            formatted_line = f"{parts[0]}x {parts[1]}" if len(parts) == 2 else parts[0]
+            (mainboard if section == "mainboard" else sideboard).append(formatted_line)
 
-    return mainboard, sideboard
+    return player_name, deck_archetype, mainboard, sideboard
 
 def draw_text_with_outline(draw, position, text_lines, font, text_color="white", outline_color="black", outline_width=TEXT_OUTLINE_WIDTH, align="left"):
     """Draws text with an outline for better readability."""
@@ -123,9 +119,9 @@ def draw_text_with_outline(draw, position, text_lines, font, text_color="white",
         
         draw.text((x_pos, line_y), line, font=font, fill=text_color)
 
-def create_player_card(player_photo, player_name, deck_archetype, decklist_file, output_file=OUTPUT_FILE):
-    """Creates a player card with formatted top and bottom sections."""
-    mainboard, sideboard = parse_decklist(decklist_file)
+def create_player_card(player_photo, decklist_file, output_file=OUTPUT_FILE):
+    """Creates a player card using data from decklist.txt."""
+    player_name, deck_archetype, mainboard, sideboard = parse_decklist(decklist_file)
 
     # Load and process images
     bg_top = Image.open(TOP_BACKGROUND_IMAGE).resize((CARD_WIDTH, TOP_SECTION_HEIGHT))
@@ -197,4 +193,4 @@ def create_player_card(player_photo, player_name, deck_archetype, decklist_file,
     print(f"✅ Player card saved as {output_file}")
 
 # ========== SCRIPT EXECUTION ==========
-create_player_card("player.jpg", "John Doe", "Amulet Titan", DECKLIST_FILE)
+create_player_card("player.jpg", DECKLIST_FILE)
