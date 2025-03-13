@@ -14,6 +14,9 @@ TEXT_OUTLINE_WIDTH = 2  # Thickness of the text outline for better visibility
 FONT_PATH = "arial.ttf"  # Path to the font file
 
 COLUMN_FONT_SIZE = 30  # Font size for Mainboard & Sideboard cards
+PLAYER_NAME_FONT_SIZE = 74  # Font size for player name and deck archetype
+COLUMN_TITLE_FONT_SIZE = 50  # Font size for column titles (Mainboard & Sideboard)
+
 DECKLIST_FILE = "decklist.txt"  # File containing decklist info
 
 MAINBOARD_X_OFFSET = 100  # Horizontal position for Mainboard column
@@ -151,15 +154,18 @@ def create_player_card(player_photo, player_name, deck_archetype, decklist_file,
     # Draw text
     draw = ImageDraw.Draw(card)
     try:
-        font = ImageFont.truetype(FONT_PATH, 42)
+        name_font = ImageFont.truetype(FONT_PATH, PLAYER_NAME_FONT_SIZE)
+        column_title_font = ImageFont.truetype(FONT_PATH, COLUMN_TITLE_FONT_SIZE)
         small_font = ImageFont.truetype(FONT_PATH, COLUMN_FONT_SIZE)
     except:
-        font = ImageFont.load_default()
+        name_font = ImageFont.load_default()
+        column_title_font = ImageFont.load_default()
         small_font = ImageFont.load_default()
 
+
     # **Text Positions**
-    draw_text_with_outline(draw, (MAINBOARD_X_OFFSET, TEXT_START_Y), ["Mainboard"], font, align="center")
-    draw_text_with_outline(draw, (SIDEBOARD_X_OFFSET, TEXT_START_Y), ["Sideboard"], font, align="center")
+    draw_text_with_outline(draw, (MAINBOARD_X_OFFSET, TEXT_START_Y), ["Mainboard"], column_title_font, align="center")
+    draw_text_with_outline(draw, (SIDEBOARD_X_OFFSET, TEXT_START_Y), ["Sideboard"], column_title_font, align="center")
 
     # **Draw Cards List**
     card_spacing = COLUMN_FONT_SIZE + 10
@@ -178,13 +184,13 @@ def create_player_card(player_photo, player_name, deck_archetype, decklist_file,
     card.paste(sponsor_logo2, (sponsor_2, SPONSOR_LOGO_2_Y), sponsor_logo2)
 
         # **Text Positions**
-    text_y = player_y + player_img.size[1] // 2 - 40
+    text_y = player_y + player_img.size[1] // 2 - 80
     name_x = player_x - 40
     deck_x = player_x + player_img.size[0] + 40
 
     # **Draw player name & deck archetype**
-    draw_text_with_outline(draw, (name_x, text_y), player_name.split(" "), font, align="right")
-    draw_text_with_outline(draw, (deck_x, text_y), deck_archetype.split(" "), font, align="left")
+    draw_text_with_outline(draw, (name_x, text_y), player_name.split(" "), name_font, align="right")
+    draw_text_with_outline(draw, (deck_x, text_y), deck_archetype.split(" "), name_font, align="left")
 
     # Save result
     card.save(output_file)
