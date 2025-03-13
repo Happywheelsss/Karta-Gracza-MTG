@@ -1,15 +1,31 @@
 from PIL import Image, ImageDraw, ImageFont
 
-# Constants
-CARD_WIDTH = 800
-CARD_HEIGHT = 1200
-TOP_SECTION_HEIGHT = int(CARD_HEIGHT * 0.25)
-BOTTOM_SECTION_HEIGHT = CARD_HEIGHT - TOP_SECTION_HEIGHT
-PLAYER_PHOTO_SIZE = 200
-OUTLINE_WIDTH = 10
-TEXT_OUTLINE_WIDTH = 4
-FONT_PATH = "verdana.ttf"
+# ========== CONFIGURABLE VARIABLES ==========
+CARD_WIDTH = 800  # Width of the player card
+CARD_HEIGHT = 1200  # Height of the player card
 
+TOP_SECTION_HEIGHT = int(CARD_HEIGHT * 0.3)  # Height of the top section (background + player photo)
+BOTTOM_SECTION_HEIGHT = CARD_HEIGHT - TOP_SECTION_HEIGHT  # Height of the decklist section
+
+PLAYER_PHOTO_SIZE = 275  # Size of the player's circular photo
+OUTLINE_WIDTH = 5  # Thickness of the circular photo outline
+
+TEXT_OUTLINE_WIDTH = 2  # Thickness of the text outline for better visibility
+FONT_PATH = "arial.ttf"  # Path to the font file
+
+COLUMN_FONT_SIZE = 24  # Font size for Mainboard & Sideboard cards
+DECKLIST_FILE = "decklist.txt"  # File containing decklist info
+
+MAINBOARD_X_OFFSET = 100  # Horizontal position for Mainboard column
+SIDEBOARD_X_OFFSET = CARD_WIDTH // 2 + 100  # Horizontal position for Sideboard column
+TEXT_START_Y = TOP_SECTION_HEIGHT + 50  # Vertical starting position for text in the decklist section
+
+TOP_BACKGROUND_IMAGE = "background.jpg"  # Background image for the top section
+BOTTOM_BACKGROUND_IMAGE = "bottom_background.jpg"  # Background image for the bottom section
+
+OUTPUT_FILE = "player_card.jpg"  # Output file name
+
+# ========== FUNCTION DEFINITIONS ==========
 def crop_center(image, size):
     """Crops the image to a square from the center and resizes it."""
     width, height = image.size
@@ -24,12 +40,10 @@ def make_circle(image):
     image = image.convert("RGBA")
     size = (PLAYER_PHOTO_SIZE + OUTLINE_WIDTH * 2, PLAYER_PHOTO_SIZE + OUTLINE_WIDTH * 2)
 
-    # Create mask
     mask = Image.new("L", (PLAYER_PHOTO_SIZE, PLAYER_PHOTO_SIZE), 0)
     draw = ImageDraw.Draw(mask)
     draw.ellipse((0, 0, PLAYER_PHOTO_SIZE, PLAYER_PHOTO_SIZE), fill=255)
 
-    # Create circular image with outline
     circular_img = Image.new("RGBA", size, (0, 0, 0, 0))
     outline_mask = Image.new("L", size, 0)
     outline_draw = ImageDraw.Draw(outline_mask)
@@ -44,21 +58,42 @@ def make_circle(image):
 
     return circular_img
 
-def create_gradient(width, height, start_color, end_color):
-    """Creates a horizontal gradient."""
-    gradient = Image.new("RGB", (width, height), start_color)
-    draw = ImageDraw.Draw(gradient)
+def parse_decklist(file_path):
+    """Parses decklist.txt into mainboard and sideboard lists."""
+    mainboard = []
+    sideboard = []
+    section = None
 
-    for x in range(width):
-        r = start_color[0] + (end_color[0] - start_color[0]) * x // width
-        g = start_color[1] + (end_color[1] - start_color[1]) * x // width
-        b = start_color[2] + (end_color[2] - start_color[2]) * x // width
-        draw.line([(x, 0), (x, height)], fill=(r, g, b))
+    with open(file_path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
 
-    return gradient
+            if line.lower().startswith("mainboard:"):
+                section = "mainboard"
+                continue
+            elif line.lower().startswith("sideboard:"):
+                section = "sideboard"
+                continue
+
+            if section:
+                parts = line.split(" ", 1)
+                if len(parts) == 2:
+                    qty, name = parts
+                    formatted_line = f"{qty}x {name}"
+                else:
+                    formatted_line = parts[0]
+
+                if section == "mainboard":
+                    mainboard.append(formatted_line)
+                elif section == "sideboard":
+                    sideboard.append(formatted_line)
+
+    return mainboard, sideboard
 
 def draw_text_with_outline(draw, position, text_lines, font, text_color="white", outline_color="black", outline_width=TEXT_OUTLINE_WIDTH, align="left"):
-    """Draws text with an outline."""
+    """Draws text with an outline for better readability."""
     x, y = position
 
     for i, line in enumerate(text_lines):
@@ -78,9 +113,14 @@ def draw_text_with_outline(draw, position, text_lines, font, text_color="white",
         
         draw.text((x_pos, line_y), line, font=font, fill=text_color)
 
-def create_player_card(background_img, player_photo, player_name, deck_archetype, mainboard, sideboard, output_file="player_card.jpg"):
+def create_player_card(player_photo, player_name, deck_archetype, decklist_file, output_file=OUTPUT_FILE):
+    """Creates a player card with formatted top and bottom sections."""
+    mainboard, sideboard = parse_decklist(decklist_file)
+
     # Load and process images
-    bg = Image.open(background_img).resize((CARD_WIDTH, TOP_SECTION_HEIGHT))
+    bg_top = Image.open(TOP_BACKGROUND_IMAGE).resize((CARD_WIDTH, TOP_SECTION_HEIGHT))
+    bg_bottom = Image.open(BOTTOM_BACKGROUND_IMAGE).resize((CARD_WIDTH, BOTTOM_SECTION_HEIGHT))
+    
     player_img = Image.open(player_photo)
     player_img = crop_center(player_img, PLAYER_PHOTO_SIZE)
     player_img = make_circle(player_img)
@@ -88,8 +128,9 @@ def create_player_card(background_img, player_photo, player_name, deck_archetype
     # Create blank card
     card = Image.new("RGB", (CARD_WIDTH, CARD_HEIGHT), "white")
 
-    # Paste background at the top
-    card.paste(bg, (0, 0))
+    # Paste backgrounds
+    card.paste(bg_top, (0, 0))
+    card.paste(bg_bottom, (0, TOP_SECTION_HEIGHT))
 
     # Paste player photo
     player_x = (CARD_WIDTH - player_img.size[0]) // 2
@@ -100,7 +141,7 @@ def create_player_card(background_img, player_photo, player_name, deck_archetype
     draw = ImageDraw.Draw(card)
     try:
         font = ImageFont.truetype(FONT_PATH, 42)
-        small_font = ImageFont.truetype(FONT_PATH, 36)
+        small_font = ImageFont.truetype(FONT_PATH, COLUMN_FONT_SIZE)
     except:
         font = ImageFont.load_default()
         small_font = ImageFont.load_default()
@@ -114,41 +155,26 @@ def create_player_card(background_img, player_photo, player_name, deck_archetype
     draw_text_with_outline(draw, (name_x, text_y), player_name.split(" "), font, align="right")
     draw_text_with_outline(draw, (deck_x, text_y), deck_archetype.split(" "), font, align="left")
 
-    # **Create bottom section with gradient**
-    gradient_bg = create_gradient(CARD_WIDTH, BOTTOM_SECTION_HEIGHT, (0, 0, 80), (0, 0, 255))
-    card.paste(gradient_bg, (0, TOP_SECTION_HEIGHT))
-
-    # **Column Positions**
-    column_spacing = 100
-    mainboard_x = column_spacing
-    sideboard_x = CARD_WIDTH // 2 + column_spacing
-    bottom_text_y = TOP_SECTION_HEIGHT + 50
-
     # **Draw Headers**
-    draw_text_with_outline(draw, (mainboard_x, bottom_text_y), ["Mainboard"], font, align="left")
-    draw_text_with_outline(draw, (sideboard_x, bottom_text_y), ["Sideboard"], font, align="left")
+    draw_text_with_outline(draw, (MAINBOARD_X_OFFSET, TEXT_START_Y), ["Mainboard"], font, align="center")
+    draw_text_with_outline(draw, (SIDEBOARD_X_OFFSET, TEXT_START_Y), ["Sideboard"], font, align="center")
 
     # **Draw Cards List**
-    card_spacing = 40
+    card_spacing = COLUMN_FONT_SIZE + 10
     for i, card_name in enumerate(mainboard):
-        draw_text_with_outline(draw, (mainboard_x, bottom_text_y + 60 + i * card_spacing), [card_name], small_font, align="left")
+        draw_text_with_outline(draw, (MAINBOARD_X_OFFSET, TEXT_START_Y + 60 + i * card_spacing), [card_name], small_font, align="center")
 
     for i, card_name in enumerate(sideboard):
-        draw_text_with_outline(draw, (sideboard_x, bottom_text_y + 60 + i * card_spacing), [card_name], small_font, align="left")
+        draw_text_with_outline(draw, (SIDEBOARD_X_OFFSET, TEXT_START_Y + 60 + i * card_spacing), [card_name], small_font, align="center")
 
     # Save result
     card.save(output_file)
     print(f"✅ Player card saved as {output_file}")
 
-# Example usage
-mainboard_cards = ["Card 1", "Card 2", "Card 3", "Card 4"]
-sideboard_cards = ["Card A", "Card B", "Card C", "Card D"]
-
+# ========== SCRIPT EXECUTION ==========
 create_player_card(
-    "background.jpg",
     "player.jpg",
     "John Doe",
     "Amulet Titan",
-    mainboard_cards,
-    sideboard_cards
+    DECKLIST_FILE
 )
