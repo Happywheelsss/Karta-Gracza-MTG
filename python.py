@@ -1,10 +1,10 @@
 from PIL import Image, ImageDraw, ImageFont
 
 # ========== CONFIGURABLE VARIABLES ==========
-CARD_WIDTH = 800  # Width of the player card
+CARD_WIDTH = 1000  # Width of the player card
 CARD_HEIGHT = 1400  # Height of the player card
 
-TOP_SECTION_HEIGHT = int(CARD_HEIGHT * 0.3)  # Height of the top section (background + player photo)
+TOP_SECTION_HEIGHT = int(CARD_HEIGHT * 0.25)  # Height of the top section (background + player photo)
 BOTTOM_SECTION_HEIGHT = CARD_HEIGHT - TOP_SECTION_HEIGHT  # Height of the decklist section
 
 PLAYER_PHOTO_SIZE = 275  # Size of the player's circular photo
@@ -13,7 +13,7 @@ OUTLINE_WIDTH = 5  # Thickness of the circular photo outline
 TEXT_OUTLINE_WIDTH = 2  # Thickness of the text outline for better visibility
 FONT_PATH = "arial.ttf"  # Path to the font file
 
-COLUMN_FONT_SIZE = 24  # Font size for Mainboard & Sideboard cards
+COLUMN_FONT_SIZE = 30  # Font size for Mainboard & Sideboard cards
 DECKLIST_FILE = "decklist.txt"  # File containing decklist info
 
 MAINBOARD_X_OFFSET = 100  # Horizontal position for Mainboard column
@@ -22,6 +22,13 @@ TEXT_START_Y = TOP_SECTION_HEIGHT + 50  # Vertical starting position for text in
 
 TOP_BACKGROUND_IMAGE = "background.jpg"  # Background image for the top section
 BOTTOM_BACKGROUND_IMAGE = "bottom_background.jpg"  # Background image for the bottom section
+
+SPONSOR_LOGO_SIZE = (350, 175)  # Size of the sponsor logo (width, height)
+SPONSOR_LOGO_1_IMAGE = "sponsor_logo1.png"  # Sponsor logo image file
+SPONSOR_LOGO_1_Y = CARD_HEIGHT - 250  # Vertical position of the sponsor logo
+SPONSOR_LOGO_2_IMAGE = "sponsor_logo2.png"  # Sponsor logo image file
+SPONSOR_LOGO_2_Y = CARD_HEIGHT - 450  # Vertical position of the sponsor logo
+
 
 OUTPUT_FILE = "player_card.jpg"  # Output file name
 
@@ -120,6 +127,10 @@ def create_player_card(player_photo, player_name, deck_archetype, decklist_file,
     # Load and process images
     bg_top = Image.open(TOP_BACKGROUND_IMAGE).resize((CARD_WIDTH, TOP_SECTION_HEIGHT))
     bg_bottom = Image.open(BOTTOM_BACKGROUND_IMAGE).resize((CARD_WIDTH, BOTTOM_SECTION_HEIGHT))
+    sponsor_logo1 = Image.open(SPONSOR_LOGO_1_IMAGE).resize(SPONSOR_LOGO_SIZE)
+    sponsor_logo2 = Image.open(SPONSOR_LOGO_2_IMAGE).resize(SPONSOR_LOGO_SIZE)
+    sponsor_logo1 = sponsor_logo1.convert("RGBA")
+    sponsor_logo2 = sponsor_logo2.convert("RGBA")
     
     player_img = Image.open(player_photo)
     player_img = crop_center(player_img, PLAYER_PHOTO_SIZE)
@@ -147,15 +158,6 @@ def create_player_card(player_photo, player_name, deck_archetype, decklist_file,
         small_font = ImageFont.load_default()
 
     # **Text Positions**
-    text_y = player_y + player_img.size[1] // 2 - 40
-    name_x = player_x - 40
-    deck_x = player_x + player_img.size[0] + 40
-
-    # **Draw player name & deck archetype**
-    draw_text_with_outline(draw, (name_x, text_y), player_name.split(" "), font, align="right")
-    draw_text_with_outline(draw, (deck_x, text_y), deck_archetype.split(" "), font, align="left")
-
-    # **Draw Headers**
     draw_text_with_outline(draw, (MAINBOARD_X_OFFSET, TEXT_START_Y), ["Mainboard"], font, align="center")
     draw_text_with_outline(draw, (SIDEBOARD_X_OFFSET, TEXT_START_Y), ["Sideboard"], font, align="center")
 
@@ -167,14 +169,26 @@ def create_player_card(player_photo, player_name, deck_archetype, decklist_file,
     for i, card_name in enumerate(sideboard):
         draw_text_with_outline(draw, (SIDEBOARD_X_OFFSET, TEXT_START_Y + 60 + i * card_spacing), [card_name], small_font, align="center")
 
+    # **Paste Sponsor Logo**
+    sponsor_1 = SIDEBOARD_X_OFFSET - SPONSOR_LOGO_SIZE[0] // 2 + 120
+    card.paste(sponsor_logo1, (sponsor_1, SPONSOR_LOGO_1_Y), sponsor_logo1)
+
+        # **Paste Sponsor Logo**
+    sponsor_2 = SIDEBOARD_X_OFFSET - SPONSOR_LOGO_SIZE[0] // 2 + 120
+    card.paste(sponsor_logo2, (sponsor_2, SPONSOR_LOGO_2_Y), sponsor_logo2)
+
+        # **Text Positions**
+    text_y = player_y + player_img.size[1] // 2 - 40
+    name_x = player_x - 40
+    deck_x = player_x + player_img.size[0] + 40
+
+    # **Draw player name & deck archetype**
+    draw_text_with_outline(draw, (name_x, text_y), player_name.split(" "), font, align="right")
+    draw_text_with_outline(draw, (deck_x, text_y), deck_archetype.split(" "), font, align="left")
+
     # Save result
     card.save(output_file)
     print(f"✅ Player card saved as {output_file}")
 
 # ========== SCRIPT EXECUTION ==========
-create_player_card(
-    "player.jpg",
-    "John Doe",
-    "Amulet Titan",
-    DECKLIST_FILE
-)
+create_player_card("player.jpg", "John Doe", "Amulet Titan", DECKLIST_FILE)
