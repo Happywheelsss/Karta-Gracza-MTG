@@ -1,0 +1,8 @@
+Mainboard:
+4 Forest
+1 Mountain
+5 Swamp
+
+Sideboard:
+2 Plains
+3 Surgical Extraction
