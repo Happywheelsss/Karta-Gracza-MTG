@@ -14,7 +14,7 @@ TEXT_OUTLINE_WIDTH = 2  # Thickness of the text outline for better visibility
 FONT_PATH = "verdana.ttf"  # Path to the font file
 
 COLUMN_FONT_SIZE = 30  # Font size for Mainboard & Sideboard cards
-PLAYER_NAME_FONT_SIZE = 74  # Font size for player name and deck archetype
+PLAYER_NAME_FONT_SIZE = 50  # Font size for player name and deck archetype
 COLUMN_TITLE_FONT_SIZE = 50  # Font size for column titles (Mainboard & Sideboard)
 
 DECKLIST_FILE = "decklist.txt"  # File containing decklist info
@@ -197,4 +197,4 @@ def create_player_card(player_photo, decklist_file, output_file=OUTPUT_FILE):
     print(f"✅ Player card saved as {output_file}")
 
 # ========== SCRIPT EXECUTION ==========
-create_player_card("player.jpg", DECKLIST_FILE)
+create_player_card("player.jpeg", DECKLIST_FILE)
