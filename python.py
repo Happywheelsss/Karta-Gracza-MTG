@@ -24,7 +24,7 @@ SIDEBOARD_X_OFFSET = CARD_WIDTH // 2 + 100  # Horizontal position for Sideboard 
 TEXT_START_Y = TOP_SECTION_HEIGHT + 50  # Vertical starting position for text in the decklist section
 
 TOP_BACKGROUND_IMAGE = "background.jpg"  # Background image for the top section
-BOTTOM_BACKGROUND_IMAGE = "bottom_background.jpg"  # Background image for the bottom section
+BOTTOM_BACKGROUND_IMAGE = "bottom_background.png"  # Background image for the bottom section
 
 SPONSOR_LOGO_SIZE = (350, 175)  # Size of the sponsor logo (width, height)
 SPONSOR_LOGO_1_IMAGE = "sponsor_logo1.png"  # Sponsor logo image file
